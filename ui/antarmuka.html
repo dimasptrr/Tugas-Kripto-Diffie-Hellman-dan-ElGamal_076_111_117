@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kriptografi: Diffie-Hellman dan ElGamal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Diffie-Hellman dan ElGamal</h1>
+  <p>Studi kasus: E-Voting Musrenbang Warga Surabaya. Semua perhitungan memakai kode buatan sendiri (tanpa library kripto).</p>
+</header>
+<nav role="tablist" id="nav">
+  <button role="tab" data-tab="beranda" aria-selected="true">Parameter &amp; Kunci</button>
+  <button role="tab" data-tab="dh" aria-selected="false">Diffie-Hellman</button>
+  <button role="tab" data-tab="eg" aria-selected="false">ElGamal</button>
+  <button role="tab" data-tab="vote" aria-selected="false">E-Voting</button>
+</nav>
+<main>
+
+<!-- ============ PARAMETER (Anggota 1) ============ -->
+<section id="beranda" class="aktif">
+  <div class="card">
+    <h2>Fase 0 dan 1: parameter publik dan kunci panitia</h2>
+    <p class="hint">Membangkitkan prima aman p = 2q + 1, akar primitif g, generator ElGamal h = g<sup>2</sup>, lalu kunci ElGamal panitia.</p>
+    <div class="row">
+      <label>Panjang p (bit)
+        <select id="s-bits"><option>32</option><option>64</option><option selected>128</option><option>160</option></select>
+      </label>
+      <label>Seed acak <input id="s-seed" value="20261026" inputmode="numeric"></label>
+      <button class="aksi" id="s-go">Bangkitkan</button>
+    </div>
+    <div class="err" id="s-err"></div>
+    <div id="s-out" style="display:none">
+      <h3>Hasil</h3>
+      <div class="kv"><div class="k">p (publik)</div><div class="v" id="o-p"></div></div>
+      <div class="kv"><div class="k">q = (p-1)/2</div><div class="v" id="o-q"></div></div>
+      <div class="kv"><div class="k">g (akar primitif)</div><div class="v" id="o-g"></div></div>
+      <div class="kv"><div class="k">h = g<sup>2</sup> mod p</div><div class="v" id="o-h"></div></div>
+      <div class="kv"><div class="k">y = h<sup>x</sup> mod p<span class="badge pub">publik</span></div><div class="v" id="o-y"></div></div>
+      <div class="kv"><div class="k">x (kunci privat)</div><div class="v">disimpan panitia di server, tidak pernah ditampilkan</div></div>
+      <details><summary>Lihat log langkah</summary><pre id="o-log"></pre></details>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Alur studi kasus</h2>
+    <div class="alur">
+      <div><b>1. Parameter</b>p, g dibuat dan diverifikasi</div>
+      <div><b>2. Kunci panitia</b>ElGamal (y publik, x privat)</div>
+      <div><b>3. Pemungutan</b>DH per warga, surat suara ElGamal, saluran terenkripsi</div>
+      <div><b>4. Penghitungan</b>kalikan ciphertext, dekripsi sekali, audit</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DIFFIE-HELLMAN (Anggota 2) ============ -->
+<section id="dh">
+  <div class="card">
+    <h2>Pertukaran kunci Diffie-Hellman</h2>
+    <p class="hint">Dua pihak menyepakati kunci yang sama tanpa pernah mengirim kunci itu. Penyadap hanya melihat p, g, A, dan B.</p>
+    <div class="row">
+      <label>p (prima publik) <input id="dh-p" value="23"></label>
+      <label>g (akar primitif) <input id="dh-g" value="5"></label>
+      <label>a (rahasia Alice) <input id="dh-a" value="6"></label>
+      <label>b (rahasia Bob) <input id="dh-b" value="15"></label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="aksi" id="dh-go">Hitung</button>
+      <button class="sekunder" id="dh-toy">Contoh kecil (23, 5, 6, 15)</button>
+      <button class="sekunder" id="dh-rand">Acak 64 bit</button>
+    </div>
+    <div class="err" id="dh-err"></div>
+    <div id="dh-out" style="display:none">
+      <div class="tiga" style="margin-top:14px">
+        <div class="kol">
+          <h3>Alice</h3>
+          <div class="kv"><div class="k">a<span class="badge sec">rahasia</span></div><div class="v" id="dh-oa"></div></div>
+          <div class="kv"><div class="k"><span class="formula">A = g^a mod p</span>A<span class="badge pub">dikirim</span></div><div class="v" id="dh-oA"></div></div>
+          <div class="kv"><div class="k"><span class="formula">K = B^a mod p</span>K</div><div class="v" id="dh-oK1"></div></div>
+        </div>
+        <div class="kol">
+          <h3>Jaringan publik</h3>
+          <div class="kv"><div class="k">p, g</div><div class="v" id="dh-opg"></div></div>
+          <div class="kv"><div class="k">Alice kirim A</div><div class="v" id="dh-pA"></div></div>
+          <div class="kv"><div class="k">Bob kirim B</div><div class="v" id="dh-pB"></div></div>
+        </div>
+        <div class="kol">
+          <h3>Bob</h3>
+          <div class="kv"><div class="k">b<span class="badge sec">rahasia</span></div><div class="v" id="dh-ob"></div></div>
+          <div class="kv"><div class="k"><span class="formula">B = g^b mod p</span>B<span class="badge pub">dikirim</span></div><div class="v" id="dh-oB"></div></div>
+          <div class="kv"><div class="k"><span class="formula">K' = A^b mod p</span>K'</div><div class="v" id="dh-oK2"></div></div>
+        </div>
+      </div>
+      <div class="hasil" id="dh-hasil"></div>
+      <p class="hint" id="dh-prim" style="margin-top:8px"></p>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Serangan Man-in-the-Middle</h2>
+    <p class="hint">Tanpa autentikasi, penyerang bisa menyusup di tengah. Lihat apa yang berhasil dan tidak berhasil dilakukannya.</p>
+    <button class="aksi" id="mitm-go">Jalankan demo MITM</button>
+    <pre id="mitm-out" style="display:none"></pre>
+  </div>
+</section>
+
+<!-- ============ ELGAMAL (Anggota 3) ============ -->
+<section id="eg">
+  <div class="card">
+    <h2>Enkripsi dan dekripsi ElGamal</h2>
+    <p class="hint">Kolom k boleh dikosongkan, program akan memilih bilangan acak baru. Pesan m harus lebih kecil dari p.</p>
+    <div class="row">
+      <label>p (prima) <input id="eg-p" value="2579"></label>
+      <label>g <input id="eg-g" value="2"></label>
+      <label>x (privat) <input id="eg-x" value="765"></label>
+      <label>k (acak, opsional) <input id="eg-k" value="853"></label>
+      <label>m (pesan) <input id="eg-m" value="1299"></label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="aksi" id="eg-go">Hitung</button>
+      <button class="sekunder" id="eg-toy">Contoh buku (2579, 2, 765, 853, 1299)</button>
+      <button class="sekunder" id="eg-rand">Acak 64 bit</button>
+    </div>
+    <div class="err" id="eg-err"></div>
+    <div id="eg-out" style="display:none">
+      <div class="tiga" style="margin-top:14px">
+        <div class="kol">
+          <h3>1. Kunci</h3>
+          <div class="kv"><div class="k"><span class="formula">y = g^x mod p</span>y<span class="badge pub">publik</span></div><div class="v" id="eg-oy"></div></div>
+          <div class="kv"><div class="k">x<span class="badge sec">privat</span></div><div class="v" id="eg-ox"></div></div>
+        </div>
+        <div class="kol">
+          <h3>2. Enkripsi</h3>
+          <div class="kv"><div class="k">k<span class="badge sec">rahasia</span></div><div class="v" id="eg-ok"></div></div>
+          <div class="kv"><div class="k"><span class="formula">a = g^k mod p</span>a</div><div class="v" id="eg-oa"></div></div>
+          <div class="kv"><div class="k"><span class="formula">b = y^k * m mod p</span>b</div><div class="v" id="eg-ob"></div></div>
+        </div>
+        <div class="kol">
+          <h3>3. Dekripsi</h3>
+          <div class="kv"><div class="k"><span class="formula">a^x mod p</span>a^x</div><div class="v" id="eg-oax"></div></div>
+          <div class="kv"><div class="k"><span class="formula">invers (Euclid)</span>(a^x)^-1</div><div class="v" id="eg-oinv"></div></div>
+          <div class="kv"><div class="k"><span class="formula">m = b * a^(p-1-x)</span>m</div><div class="v" id="eg-om1"></div></div>
+          <div class="kv"><div class="k"><span class="formula">m = b * (a^x)^-1</span>m (cara 2)</div><div class="v" id="eg-om2"></div></div>
+        </div>
+      </div>
+      <div class="hasil" id="eg-hasil"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Sifat homomorfik</h2>
+    <p class="hint">Mengalikan dua ciphertext menghasilkan ciphertext dari hasil kali pesannya. Memakai p, g, dan x di atas. Inilah dasar penghitungan suara tanpa membuka suara individu.</p>
+    <div class="row">
+      <label>m1 <input id="ho-m1" value="6"></label>
+      <label>m2 <input id="ho-m2" value="7"></label>
+      <button class="aksi" id="ho-go">Uji</button>
+    </div>
+    <div class="err" id="ho-err"></div>
+    <div id="ho-out" style="display:none">
+      <div class="kv"><div class="k">E(m1) = (a1, b1)</div><div class="v" id="ho-c1"></div></div>
+      <div class="kv"><div class="k">E(m2) = (a2, b2)</div><div class="v" id="ho-c2"></div></div>
+      <div class="kv"><div class="k">(a1*a2, b1*b2)</div><div class="v" id="ho-c"></div></div>
+      <div class="hasil" id="ho-hasil"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ E-VOTING (Anggota 3) ============ -->
+<section id="vote">
+  <div class="card">
+    <h2>Simulasi e-voting Musrenbang</h2>
+    <p class="hint">Atur pemilih dan pilihannya. Setiap warga melakukan DH dengan server, mengenkripsi surat suara dengan ElGamal, lalu server hanya menyimpan ciphertext. Parameter diambil dari tab pertama (dibuat otomatis bila belum ada).</p>
+    <table>
+      <thead><tr><th style="width:56px">ID</th><th>Nama warga</th><th>Pilihan program</th><th style="width:60px"></th></tr></thead>
+      <tbody id="v-body"></tbody>
+    </table>
+    <div class="row" style="margin-top:12px">
+      <button class="sekunder" id="v-add">Tambah warga</button>
+      <button class="sekunder" id="v-reset">Kembalikan data contoh</button>
+      <label style="flex:0 0 auto;flex-direction:row;align-items:center;gap:8px;color:var(--ink)">
+        <input type="checkbox" id="v-ganda" checked style="width:auto"> Sertakan percobaan suara ganda
+      </label>
+      <button class="aksi" id="v-go">Jalankan pemungutan dan penghitungan</button>
+    </div>
+    <div class="err" id="v-err"></div>
+  </div>
+  <div class="card" id="v-hasilkartu" style="display:none">
+    <h2>Hasil penghitungan</h2>
+    <p class="hint" id="v-ringkas"></p>
+    <div id="v-bars"></div>
+    <div class="audit" id="v-audit"></div>
+    <details><summary>Lihat log lengkap (apa yang terjadi di tiap sesi)</summary><pre id="v-log"></pre></details>
+  </div>
+</section>
+
+</main>
+<script src="script.js"></script>
+</body>
+</html>
